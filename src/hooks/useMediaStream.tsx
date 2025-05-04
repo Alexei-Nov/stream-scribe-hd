@@ -25,6 +25,7 @@ export default function useMediaStream() {
   const [selectedQuality, setSelectedQuality] = useState<'standard' | 'high' | 'ultra'>('high');
   const [streamId, setStreamId] = useState<string>('');
   const [isHost, setIsHost] = useState<boolean>(true);
+  const [joinedStreamId, setJoinedStreamId] = useState<string>('');
 
   const getVideoConstraints = useCallback((quality: 'standard' | 'high' | 'ultra') => {
     // Define video constraints based on quality setting
@@ -62,7 +63,6 @@ export default function useMediaStream() {
 
       const videoConstraints = getVideoConstraints(options.videoQuality || selectedQuality);
       
-      // Removed the cursor property from the constraints as it's not recognized by TypeScript
       const displayMediaOptions = {
         audio: options.audio,
         video: {
@@ -114,20 +114,74 @@ export default function useMediaStream() {
         error: null
       });
       
-      // In a real implementation, this would use WebRTC to connect to the host's stream
-      // For now, we'll simulate joining with a timeout
+      // In a real implementation with WebRTC, we would connect to the host's stream here
+      // For this demo, we'll create a simulated stream to show that joining works
+      // without requiring complex WebRTC setup
+      
+      const simulateConnection = async () => {
+        // Create a canvas element to generate a stream
+        const canvas = document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 720;
+        
+        // Get the canvas context and draw some content
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Fill with a dark background
+          ctx.fillStyle = '#1a1a1a';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Add some text
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 48px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Connected to Stream', canvas.width / 2, canvas.height / 2 - 50);
+          
+          ctx.font = '24px sans-serif';
+          ctx.fillText(`Stream ID: ${joinStreamId}`, canvas.width / 2, canvas.height / 2 + 20);
+          
+          // Add a message about the demo
+          ctx.font = '18px sans-serif';
+          ctx.fillStyle = '#aaaaaa';
+          ctx.fillText('This is a simulated stream for demo purposes', canvas.width / 2, canvas.height / 2 + 80);
+        }
+        
+        // Get a MediaStream from the canvas
+        // @ts-ignore - some browsers might not support this method
+        const simulatedStream = canvas.captureStream(30); // 30 fps
+        
+        // Add an audio track with silence if the browser supports it
+        try {
+          const audioContext = new AudioContext();
+          const oscillator = audioContext.createOscillator();
+          const dst = oscillator.connect(audioContext.createMediaStreamDestination());
+          oscillator.start();
+          
+          // Add the audio track to our stream
+          const audioTrack = dst.stream.getAudioTracks()[0];
+          audioTrack.enabled = false; // Start muted
+          simulatedStream.addTrack(audioTrack);
+        } catch (e) {
+          console.log("Could not add simulated audio track:", e);
+        }
+        
+        return simulatedStream;
+      };
+      
+      // Wait a short time to simulate connection delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // This would be where we'd receive the stream from the host in a real implementation
+      // Create our simulated stream
+      const simulatedStream = await simulateConnection();
+      
+      setJoinedStreamId(joinStreamId);
       setStreamId(joinStreamId);
       setIsHost(false);
       
       toast.success("Connected to stream");
       
-      // For demo purposes, set the stream to null since we're not actually connecting
-      // In a real implementation, this would be the stream received from the host
       setMediaState({
-        stream: null, // Would be the actual stream from host in real implementation
+        stream: simulatedStream,
         status: 'active',
         error: null,
       });
@@ -157,6 +211,7 @@ export default function useMediaStream() {
     }
     // Clear stream ID when stopping
     setStreamId('');
+    setJoinedStreamId('');
   }, [mediaState]);
 
   const toggleAudio = useCallback(() => {
@@ -210,6 +265,7 @@ export default function useMediaStream() {
     selectedQuality,
     streamId,
     isHost,
+    joinedStreamId,
     startScreenShare,
     stopScreenShare,
     toggleAudio,

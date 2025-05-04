@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Share2 } from 'lucide-react';
+import { Share2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ShareStreamProps {
@@ -50,7 +50,7 @@ const ShareStream = ({ streamId, getShareableLink }: ShareStreamProps) => {
           disabled={!streamId}
           className={copied ? "bg-green-500 text-white" : ""}
         >
-          <Share2 className="h-4 w-4" />
+          {copied ? <Copy className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mt-1">
