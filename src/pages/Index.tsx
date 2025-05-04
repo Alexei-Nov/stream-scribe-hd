@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import useMediaStream from '@/hooks/useMediaStream';
@@ -7,6 +7,7 @@ import StreamPreview from '@/components/StreamPreview';
 import SourceSelector from '@/components/SourceSelector';
 import SettingsPanel from '@/components/SettingsPanel';
 import StreamControls from '@/components/StreamControls';
+import ShareStream from '@/components/ShareStream';
 import { Camera } from 'lucide-react';
 
 const Index = () => {
@@ -16,10 +17,13 @@ const Index = () => {
     status,
     isAudioEnabled,
     selectedQuality,
+    streamId,
+    isHost,
     startScreenShare,
     stopScreenShare,
     toggleAudio,
-    changeQuality
+    changeQuality,
+    getShareableLink
   } = useMediaStream();
 
   const isStreaming = status === 'active' || status === 'requesting';
@@ -33,6 +37,17 @@ const Index = () => {
     });
   };
 
+  // Extract the join parameter from URL if present
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const joinParam = searchParams.get('join');
+    
+    if (joinParam) {
+      // Update page title to indicate joining a stream
+      document.title = "Stream Scribe HD - Joining Stream";
+    }
+  }, []);
+
   return (
     <div className="container py-6 px-4 sm:px-6 max-w-7xl mx-auto h-screen flex flex-col">
       <header className="flex items-center justify-between mb-6">
@@ -42,9 +57,9 @@ const Index = () => {
         </div>
         
         {isStreaming && (
-          <div className="streaming-indicator">
-            <span className="h-2 w-2 bg-red-500 rounded-full"></span>
-            <span>Live</span>
+          <div className="streaming-indicator flex items-center gap-2">
+            <span className="h-2 w-2 animate-pulse bg-red-500 rounded-full"></span>
+            <span>{isHost ? "Broadcasting" : "Connected"}</span>
           </div>
         )}
       </header>
@@ -64,24 +79,46 @@ const Index = () => {
                 onStopStream={stopScreenShare}
                 onAudioToggle={toggleAudio}
               />
+              
+              {isHost && isStreaming && (
+                <div className="mt-4 pt-4 border-t border-stream-border">
+                  <ShareStream 
+                    streamId={streamId} 
+                    getShareableLink={getShareableLink} 
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
         
         <div className="space-y-4">
-          <SourceSelector 
-            onSourceSelect={setDisplaySurface}
-            disabled={isStreaming}
-            activeSource={displaySurface}
-          />
+          {isHost && (
+            <>
+              <SourceSelector 
+                onSourceSelect={setDisplaySurface}
+                disabled={isStreaming}
+                activeSource={displaySurface}
+              />
+              
+              <SettingsPanel 
+                quality={selectedQuality}
+                onQualityChange={changeQuality}
+                audioEnabled={isAudioEnabled}
+                onAudioToggle={toggleAudio}
+                isStreaming={isStreaming}
+              />
+            </>
+          )}
           
-          <SettingsPanel 
-            quality={selectedQuality}
-            onQualityChange={changeQuality}
-            audioEnabled={isAudioEnabled}
-            onAudioToggle={toggleAudio}
-            isStreaming={isStreaming}
-          />
+          {!isHost && (
+            <Card className="border-stream-border bg-stream-muted p-4">
+              <h2 className="text-lg font-medium mb-2">Viewing Stream</h2>
+              <p className="text-sm text-muted-foreground">
+                You are currently viewing someone else's stream.
+              </p>
+            </Card>
+          )}
         </div>
       </div>
 
