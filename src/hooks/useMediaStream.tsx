@@ -154,11 +154,12 @@ export default function useMediaStream() {
         try {
           const audioContext = new AudioContext();
           const oscillator = audioContext.createOscillator();
-          const dst = oscillator.connect(audioContext.createMediaStreamDestination());
+          const destination = audioContext.createMediaStreamDestination();
+          oscillator.connect(destination);
           oscillator.start();
           
           // Add the audio track to our stream
-          const audioTrack = dst.stream.getAudioTracks()[0];
+          const audioTrack = destination.stream.getAudioTracks()[0];
           audioTrack.enabled = false; // Start muted
           simulatedStream.addTrack(audioTrack);
         } catch (e) {
