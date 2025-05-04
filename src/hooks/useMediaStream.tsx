@@ -60,15 +60,17 @@ export default function useMediaStream() {
 
       const videoConstraints = getVideoConstraints(options.videoQuality || selectedQuality);
       
-      // @ts-ignore: TypeScript doesn't recognize the getDisplayMedia method yet
-      const stream = await navigator.mediaDevices.getDisplayMedia({
+      // Removed the cursor property from the constraints as it's not recognized by TypeScript
+      const displayMediaOptions = {
         audio: options.audio,
         video: {
           ...videoConstraints,
           displaySurface: options.displaySurface || 'monitor',
-          cursor: 'always',
-        },
-      });
+        }
+      };
+
+      // @ts-ignore: TypeScript doesn't recognize the getDisplayMedia method yet
+      const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
 
       // Handle stream ending (user stops sharing)
       stream.getVideoTracks()[0].addEventListener('ended', () => {
